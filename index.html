@@ -108,11 +108,6 @@
                 return () => unsub();
             }, []);
 
-            const handleLogin = async () => {
-                try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } 
-                catch (e) { setAuthErr("Access Restricted. Verification Failed."); }
-            };
-
             useEffect(() => {
                 if (!user) return;
                 const promptDocPath = `artifacts/${APP_ID}/public/data/config/prompts`;
@@ -168,9 +163,9 @@
 
                 try {
                     const kbCtx = kb.map(k => `[FILE: ${k.filename}]\n${k.content}\n`).join("\n---\n");
-                    const prompt = (isAdmin && isAdv ? cloudPrompts?.defense : cloudPrompts?.solicitor) || "Act as a helpful legal assistant.";
+                    // UPDATED LOGIC: If isAdv is true, use defense prompt for both Admin and Solicitor
+                    const prompt = (isAdv ? cloudPrompts?.defense : cloudPrompts?.solicitor) || "Act as a helpful legal assistant.";
                     
-                    // FIXED: Using "system_instruction" (snake_case) to comply with raw Google REST API requirements
                     const attemptRequest = async (version) => {
                         return await fetch(`https://generativelanguage.googleapis.com/${version}/models/${modelToUse}:generateContent?key=${apiKey}`, {
                             method: 'POST',
@@ -231,8 +226,20 @@
                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 font-sans"><Globe size={10} className="text-green-500" /> Secure Node Active</p>
                         </div>
                         <div className="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar">
+                            
+                            {/* Shared: Adversarial Audit Engine (Available to all authorized users) */}
+                            <div className="space-y-2">
+                                <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-2">Strategic Engines</h3>
+                                <button onClick={() => setIsAdv(!isAdv)} className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${isAdv ? 'bg-amber-500/10 border-amber-500/40 text-amber-500' : 'bg-slate-800/40 border-slate-700 text-slate-400'}`}>
+                                    <div className="flex items-center gap-3 text-xs font-black uppercase"><Gavel size={16}/> 10s Defense Audit</div>
+                                    <div className={`w-8 h-4 rounded-full relative ${isAdv ? 'bg-amber-500' : 'bg-slate-600'}`}>
+                                        <div className={`absolute top-1 w-2 h-2 rounded-full bg-white transition-all ${isAdv ? 'left-5' : 'left-1'}`} />
+                                    </div>
+                                </button>
+                            </div>
+
                             {isAdmin && (
-                                <div className="space-y-4">
+                                <div className="space-y-4 pt-2">
                                     <div className="bg-black/40 border border-slate-800 p-4 rounded-2xl space-y-2">
                                         <div className="flex justify-between text-[10px] font-black text-slate-500 uppercase"><span>Intelligence Engine</span><Settings size={12}/></div>
                                         <select 
@@ -266,15 +273,16 @@
                                         <button onClick={() => fRef.current.click()} className="w-full py-3 bg-indigo-600/10 text-indigo-400 rounded-xl flex justify-center items-center gap-2 text-xs font-bold border border-indigo-500/20 hover:bg-indigo-600/20 transition-all"><UploadCloud size={16}/> Upload Evidence</button>
                                         <input type="file" multiple ref={fRef} onChange={handleFileUpload} className="hidden" />
                                     </div>
-                                    <button onClick={() => setIsAdv(!isAdv)} className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${isAdv ? 'bg-amber-500/10 border-amber-500/40 text-amber-500' : 'bg-slate-800/40 border-slate-700 text-slate-400'}`}><div className="flex items-center gap-3 text-xs font-black uppercase"><Gavel size={16}/> 10s Defense Audit</div><div className={`w-8 h-4 rounded-full relative ${isAdv ? 'bg-amber-500' : 'bg-slate-600'}`}><div className={`absolute top-1 w-2 h-2 rounded-full bg-white transition-all ${isAdv ? 'left-5' : 'left-1'}`} /></div></button>
                                 </div>
                             )}
+
                             {!isAdmin && (
                                 <div className="p-5 bg-[#0d1017] border border-indigo-500/30 rounded-2xl space-y-3 relative overflow-hidden"><div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" /><div className="flex items-center gap-2 text-indigo-400 uppercase font-black text-xs"><Gavel size={18} /><span>Co-Counsel</span></div><p className="text-[10px] text-slate-400 font-medium leading-relaxed">Intelligence Core Active. Select strategy:</p>
                                     <button onClick={() => setInput("Dismantle C4 'Performance' defense with 360 Feedback stats.")} className="w-full text-left p-3 bg-slate-800/40 rounded-xl text-[10px] font-bold text-slate-300 border border-slate-700/50 hover:border-indigo-500/50 transition-all font-sans">🎯 Attack Performance Defense</button>
                                     <button onClick={() => setInput("Draft cross-examination for Grace Boswood re: July 21 ICO obstruction.")} className="w-full text-left p-3 bg-slate-800/40 rounded-xl text-[10px] font-bold text-slate-300 border border-slate-700/50 hover:border-indigo-500/50 transition-all font-sans">⚠️ Cross-Examine: Grace Boswood</button>
                                 </div>
                             )}
+
                             <div className="bg-black/20 rounded-2xl border border-slate-800 p-4 space-y-3 mt-4"><div className="text-[10px] font-black text-slate-500 uppercase font-sans">Gemini Key</div>{!apiKey ? (<div className="space-y-2"><input type="password" value={kInput} onChange={e => setKInput(e.target.value)} placeholder="API Key..." className="w-full bg-[#141824] border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none" /><button onClick={() => { if(kInput.trim()){ setSS('gemini_api_key', kInput.trim()); setApiKey(kInput.trim()); } }} className="w-full py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold font-sans">Save Key</button></div>) : (<div className="flex justify-between items-center text-[10px]"><span className="text-green-500 font-mono flex items-center gap-1 font-sans"><CheckCircle size={10}/> Active</span><button onClick={() => { localStorage.removeItem('gemini_api_key'); setApiKey(''); }} className="text-red-400 uppercase hover:underline font-bold font-sans">Clear</button></div>)}</div>
                             <div className="pt-4 border-t border-slate-800 flex justify-between text-[10px] font-black text-slate-500 uppercase font-sans tracking-tight"><span>Account</span><span className="text-green-500 font-mono truncate max-w-[120px]">{user.email || user.uid.slice(0,8)}</span></div>
                         </div>
@@ -291,8 +299,13 @@
                                                 {isProc && (<div className="flex justify-start"><div className="bg-[#141824] border border-slate-800 p-4 rounded-3xl rounded-tl-none flex items-center gap-3"><Loader2 size={16} className="animate-spin text-indigo-500" /><span className="text-[10px] text-slate-500 font-black uppercase tracking-widest font-sans tracking-tight">Processing through {customModel.trim() || selectedModel}...</span></div></div>)}
                                             </div>
                                             <div className="fixed bottom-6 lg:bottom-4 left-4 right-4 lg:relative lg:left-0 lg:right-0 bg-[#11141d] p-1.5 rounded-2xl border border-slate-800 flex items-center z-40 shadow-2xl">
-                                                {isAdmin && (<button onClick={() => setIsAdv(!isAdv)} className={`p-3 rounded-xl transition-all mr-1 lg:hidden ${isAdv ? 'bg-amber-500 text-black' : 'text-slate-500'}`}><Gavel size={20} /></button>)}
-                                                <input value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleQuery()} placeholder={isAdmin && isAdv ? "Audit Statement..." : "Ask Co-Counsel..."} className="flex-1 bg-transparent outline-none px-2 py-3 text-sm font-sans" />
+                                                <button 
+                                                    onClick={() => setIsAdv(!isAdv)} 
+                                                    className={`p-3 rounded-xl transition-all mr-1 lg:hidden ${isAdv ? 'bg-amber-500 text-black' : 'text-slate-500'}`}
+                                                >
+                                                    <Gavel size={20} />
+                                                </button>
+                                                <input value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleQuery()} placeholder={isAdv ? "Defense Audit Mode..." : "Ask Co-Counsel..."} className="flex-1 bg-transparent outline-none px-2 py-3 text-sm font-sans" />
                                                 <button onClick={handleQuery} className="p-3 bg-indigo-600 text-white rounded-xl active:scale-95"><Send size={20}/></button>
                                             </div></>)}
                                 </div>
