@@ -92,7 +92,6 @@
             
             const [apiKey, setApiKey] = useState(getSS('gemini_api_key'));
             const [kInput, setKInput] = useState('');
-            // DEFAULT MODEL UPDATED TO GEMINI 3.1 PRO PREVIEW
             const [selectedModel, setSelectedModel] = useState(getSS('gemini_model') || 'gemini-3.1-pro-preview');
             const [customModel, setCustomModel] = useState(getSS('gemini_custom_model') || '');
             const scrollRef = useRef(null);
@@ -171,11 +170,15 @@
                     const kbCtx = kb.map(k => `[FILE: ${k.filename}]\n${k.content}\n`).join("\n---\n");
                     const prompt = (isAdmin && isAdv ? cloudPrompts?.defense : cloudPrompts?.solicitor) || "Act as a helpful legal assistant.";
                     
+                    // FIXED: Using "system_instruction" (snake_case) to comply with raw Google REST API requirements
                     const attemptRequest = async (version) => {
                         return await fetch(`https://generativelanguage.googleapis.com/${version}/models/${modelToUse}:generateContent?key=${apiKey}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: safe }] }], systemInstruction: { parts: [{ text: prompt + `\n\nCONTEXT:\n${kbCtx}` }] } })
+                            body: JSON.stringify({ 
+                                contents: [{ parts: [{ text: safe }] }], 
+                                system_instruction: { parts: [{ text: prompt + `\n\nCONTEXT:\n${kbCtx}` }] } 
+                            })
                         });
                     };
 
@@ -224,7 +227,7 @@
                 <div className="flex h-screen bg-[#050608] text-slate-200 font-sans overflow-hidden flex-col lg:flex-row">
                     <aside className={`${isMob ? 'hidden' : 'flex'} w-80 bg-[#0d1017] border-r border-slate-800 flex-col shadow-2xl z-40`}>
                         <div className="p-6 border-b border-slate-800 bg-gradient-to-br from-indigo-900/10 to-transparent">
-                            <div className="flex items-center gap-3 mb-2"><Shield size={24} className="text-indigo-500" /><h1 className="font-black text-xl italic tracking-tighter uppercase font-sans tracking-tight">Sentinel <span className="text-indigo-400 font-light not-italic">v23.0</span></h1></div>
+                            <div className="flex items-center gap-3 mb-2"><Shield size={24} className="text-indigo-500" /><h1 className="font-black text-xl italic tracking-tighter uppercase font-sans tracking-tight">Sentinel <span className="text-indigo-400 font-light not-italic">v23.1</span></h1></div>
                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 font-sans"><Globe size={10} className="text-green-500" /> Secure Node Active</p>
                         </div>
                         <div className="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar">
