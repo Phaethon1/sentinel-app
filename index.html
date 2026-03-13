@@ -68,7 +68,8 @@
               MessageSquare = getIcon('MessageSquare', '💬'), Gavel = getIcon('Gavel', '⚖️'), Save = getIcon('Save', '💾'), 
               Globe = getIcon('Globe', '🌐'), Loader2 = getIcon('Loader2', '⏳'), CheckCircle = getIcon('CheckCircle', '✅'), 
               Key = getIcon('Key', '🔑'), UploadCloud = getIcon('UploadCloud', '☁️'), FileText = getIcon('FileText', '📄'),
-              AlertTriangle = getIcon('AlertTriangle', '⚠️'), Target = getIcon('Target', '🎯'), Settings = getIcon('Settings', '⚙️');
+              AlertTriangle = getIcon('AlertTriangle', '⚠️'), Target = getIcon('Target', '🎯'), Settings = getIcon('Settings', '⚙️'),
+              Cpu = getIcon('Cpu', '💻'), LogOut = getIcon('LogOut', '🚪');
 
         const getSS = (k) => { try { return localStorage.getItem(k) || ''; } catch(e) { return ''; } };
         const setSS = (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} };
@@ -107,7 +108,6 @@
                 return () => unsub();
             }, []);
 
-            // FIXED: handleLogin Function Restored
             const handleLogin = async () => {
                 setAuthErr('');
                 const provider = new firebase.auth.GoogleAuthProvider();
@@ -116,6 +116,10 @@
                 } catch (e) { 
                     setAuthErr("Access Restricted. Verification Failed. Ensure popups are enabled."); 
                 }
+            };
+
+            const handleLogout = () => {
+                auth.signOut();
             };
 
             useEffect(() => {
@@ -227,7 +231,7 @@
                 <div className="flex h-screen bg-[#050608] text-slate-200 font-sans overflow-hidden flex-col lg:flex-row">
                     <aside className={`${isMob ? 'hidden' : 'flex'} w-80 bg-[#0d1017] border-r border-slate-800 flex-col shadow-2xl z-40`}>
                         <div className="p-6 border-b border-slate-800 bg-gradient-to-br from-indigo-900/10 to-transparent">
-                            <div className="flex items-center gap-3 mb-2"><Shield size={24} className="text-indigo-500" /><h1 className="font-black text-xl italic tracking-tighter uppercase font-sans">Sentinel <span className="text-indigo-400 font-light not-italic">v23.2</span></h1></div>
+                            <div className="flex items-center gap-3 mb-2"><Shield size={24} className="text-indigo-500" /><h1 className="font-black text-xl italic tracking-tighter uppercase font-sans">Sentinel <span className="text-indigo-400 font-light not-italic">v23.3</span></h1></div>
                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 font-sans"><Globe size={10} className="text-green-500" /> Secure Node Active</p>
                         </div>
                         <div className="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar">
@@ -279,7 +283,13 @@
                                 </div>
                             )}
                             <div className="bg-black/20 rounded-2xl border border-slate-800 p-4 space-y-3 mt-4"><div className="text-[10px] font-black text-slate-500 uppercase font-sans">Gemini Key</div>{!apiKey ? (<div className="space-y-2"><input type="password" value={kInput} onChange={e => setKInput(e.target.value)} placeholder="API Key..." className="w-full bg-[#141824] border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none" /><button onClick={() => { if(kInput.trim()){ setSS('gemini_api_key', kInput.trim()); setApiKey(kInput.trim()); } }} className="w-full py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold font-sans">Save Key</button></div>) : (<div className="flex justify-between items-center text-[10px]"><span className="text-green-500 font-mono flex items-center gap-1 font-sans"><CheckCircle size={10}/> Active</span><button onClick={() => { localStorage.removeItem('gemini_api_key'); setApiKey(''); }} className="text-red-400 uppercase hover:underline font-bold font-sans">Clear</button></div>)}</div>
-                            <div className="pt-4 border-t border-slate-800 flex justify-between text-[10px] font-black text-slate-500 uppercase font-sans tracking-tight"><span>Account</span><span className="text-green-500 font-mono truncate max-w-[120px]">{user.email || user.uid.slice(0,8)}</span></div>
+                            <div className="pt-4 border-t border-slate-800 flex justify-between items-center text-[10px] font-black text-slate-500 uppercase font-sans tracking-tight">
+                                <span>Account</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-green-500 font-mono truncate max-w-[100px]">{user.email || user.uid.slice(0,8)}</span>
+                                    <button onClick={handleLogout} className="p-1 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded transition-all" title="Log Out"><LogOut size={14}/></button>
+                                </div>
+                            </div>
                         </div>
                     </aside>
                     <main className="flex-1 flex flex-col relative bg-[#07080b]">
